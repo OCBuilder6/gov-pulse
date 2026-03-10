@@ -22,11 +22,7 @@ interface Props {
   spaceId: string;
 }
 
-const STATE_CONFIG = {
-  active: { label: 'ACTIVE', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-  closed: { label: 'CLOSED', bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
-  pending: { label: 'PENDING', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
-};
+const CHOICE_COLORS = ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#8b5cf6'];
 
 function timeLeft(endTs: number): string {
   const now = Date.now() / 1000;
@@ -42,16 +38,18 @@ function formatDate(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function shortAddress(addr: string): string {
+  if (!addr) return '';
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
+
 export default function ProposalCard({ proposal, spaceId }: Props) {
   const [summary, setSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const cfg = STATE_CONFIG[proposal.state as keyof typeof STATE_CONFIG] || STATE_CONFIG.closed;
-  const topChoice = proposal.choices?.[0];
-  const topScore = proposal.scores?.[0] || 0;
+  const isActive = proposal.state === 'active';
   const totalScore = proposal.scores_total || 1;
-  const topPct = ((topScore / totalScore) * 100).toFixed(1);
 
   const getSummary = async () => {
     if (summary) { setExpanded(!expanded); return; }
@@ -79,66 +77,92 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
   const snapshotLink = `https://snapshot.org/#/${spaceId}/proposal/${proposal.id}`;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-200 transition-all hover:shadow-sm overflow-hidden">
+    <div
+      className="bg-white rounded-2xl overflow-hidden transition-all"
+      style={{
+        border: '1px solid #e2e8f0',
+        borderLeft: `4px solid ${isActive ? '#10b981' : '#cbd5e1'}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      }}
+    >
       <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3">
+
+        {/* Top row: status + date */}
+        <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${proposal.state === 'active' ? 'animate-pulse' : ''}`}></span>
-              {cfg.label}
+            {/* Status badge */}
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+              style={isActive
+                ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
+                : { background: '#f1f5f9', color: '#64748b' }}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${isActive ? 'animate-pulse' : ''}`}
+                style={{ background: isActive ? '#10b981' : '#94a3b8' }}
+              ></span>
+              {isActive ? 'ACTIVE' : proposal.state === 'pending' ? 'PENDING' : 'CLOSED'}
             </span>
-            {proposal.state === 'active' && (
-              <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
+
+            {/* Time left pill (active only) */}
+            {isActive && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>
                 ⏰ {timeLeft(proposal.end)}
               </span>
             )}
           </div>
-          <span className="text-xs text-gray-400 whitespace-nowrap">
-            {proposal.state === 'closed' ? formatDate(proposal.end) : `Ends ${formatDate(proposal.end)}`}
+
+          <span className="text-xs" style={{ color: '#94a3b8' }}>
+            {isActive ? `Ends ${formatDate(proposal.end)}` : formatDate(proposal.end)}
           </span>
         </div>
 
+        {/* Title */}
         <h3 className="text-base font-semibold text-gray-900 mb-2 leading-snug">{proposal.title}</h3>
 
+        {/* Excerpt */}
         {proposal.body && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">
-            {proposal.body.replace(/#+\s/g, '').replace(/\*\*/g, '').replace(/\n/g, ' ').slice(0, 200)}…
+          <p className="text-sm mb-4 line-clamp-2 leading-relaxed" style={{ color: '#64748b' }}>
+            {proposal.body.replace(/#+\s/g, '').replace(/\*\*/g, '').replace(/\n/g, ' ').slice(0, 220)}…
           </p>
         )}
 
         {/* Vote breakdown */}
         {proposal.scores_total > 0 && proposal.choices?.length > 0 && (
           <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">
-                {(proposal.votes || 0).toLocaleString()} votes · {(proposal.scores_total || 0).toLocaleString(undefined, {maximumFractionDigits: 0})} tokens
+            {/* Meta */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs" style={{ color: '#94a3b8' }}>
+                {(proposal.votes || 0).toLocaleString()} votes · {(proposal.scores_total || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} tokens
               </span>
-              <span className="text-xs font-medium text-gray-700">{topChoice}: {topPct}%</span>
             </div>
-            <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-gray-100">
+
+            {/* Bar */}
+            <div className="flex gap-0.5 h-2 rounded-full overflow-hidden" style={{ background: '#f1f5f9' }}>
               {proposal.choices.slice(0, 5).map((choice: string, i: number) => {
                 const score = proposal.scores?.[i] || 0;
                 const pct = (score / totalScore) * 100;
-                const colors = ['bg-blue-500', 'bg-red-400', 'bg-yellow-400', 'bg-green-400', 'bg-purple-400'];
                 if (pct < 0.5) return null;
                 return (
                   <div
                     key={choice}
-                    className={`${colors[i % colors.length]} transition-all`}
-                    style={{ width: `${pct}%` }}
+                    style={{ width: `${pct}%`, background: CHOICE_COLORS[i % CHOICE_COLORS.length] }}
                     title={`${choice}: ${pct.toFixed(1)}%`}
+                    className="transition-all"
                   />
                 );
               })}
             </div>
-            <div className="flex gap-3 mt-1.5">
+
+            {/* Choice legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
               {proposal.choices.slice(0, 4).map((choice: string, i: number) => {
                 const score = proposal.scores?.[i] || 0;
                 const pct = ((score / totalScore) * 100).toFixed(0);
-                const colors = ['text-blue-600', 'text-red-500', 'text-yellow-600', 'text-green-600'];
                 return (
-                  <span key={choice} className={`text-xs ${colors[i % colors.length]}`}>
-                    {choice.slice(0, 12)}: {pct}%
+                  <span key={choice} className="flex items-center gap-1 text-xs" style={{ color: '#64748b' }}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ background: CHOICE_COLORS[i % CHOICE_COLORS.length] }}></span>
+                    {choice.slice(0, 14)}: <span className="font-semibold" style={{ color: CHOICE_COLORS[i % CHOICE_COLORS.length] }}>{pct}%</span>
                   </span>
                 );
               })}
@@ -146,46 +170,55 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+        {/* Action row */}
+        <div className="flex items-center gap-2 pt-3 border-t" style={{ borderColor: '#f1f5f9' }}>
           <button
             onClick={getSummary}
-            className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors border border-blue-100"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+            style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.15)' }}
           >
             {loadingSummary ? (
-              <><span className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></span> Analyzing…</>
+              <>
+                <span className="w-3 h-3 border border-t-transparent rounded-full animate-spin" style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }}></span>
+                Analyzing…
+              </>
             ) : summary ? (
-              expanded ? '▲ Hide AI Summary' : '▼ Show AI Summary'
+              expanded ? '▲ Hide Summary' : '▼ AI Summary'
             ) : (
-              '✨ AI Summary'
+              '✦ AI Summary'
             )}
           </button>
+
           <a
             href={snapshotLink}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors border border-gray-200"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+            style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0' }}
           >
             View on Snapshot ↗
           </a>
-          <span className="ml-auto text-xs text-gray-400">by {proposal.author?.slice(0, 8)}…</span>
+
+          <span className="ml-auto text-xs font-mono" style={{ color: '#cbd5e1' }}>
+            {shortAddress(proposal.author)}
+          </span>
         </div>
       </div>
 
-      {/* AI Summary Expansion */}
+      {/* AI Summary panel */}
       {expanded && (
-        <div className="border-t border-blue-50 bg-blue-50 px-5 py-4">
+        <div className="border-t px-5 py-4" style={{ background: 'rgba(99,102,241,0.04)', borderColor: 'rgba(99,102,241,0.12)' }}>
           {loadingSummary ? (
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span>AI is reading and analyzing this proposal…</span>
+            <div className="flex items-center gap-3 text-sm" style={{ color: '#6366f1' }}>
+              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }}></div>
+              <span>Reading and analyzing proposal…</span>
             </div>
           ) : summary ? (
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">✨ AI Summary</span>
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6366f1' }}>✦ AI Summary</span>
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{summary}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#374151' }}>{summary}</p>
             </div>
           ) : null}
         </div>

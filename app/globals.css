@@ -7,7 +7,7 @@
     scroll-behavior: smooth;
   }
   body {
-    background: #ffffff;
+    background: #f1f5f9;
     color: #111827;
   }
 }
@@ -18,5 +18,24 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Subtle dot grid for the hero */
+  .hero-grid {
+    background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* White gradient text */
+  .gradient-text {
+    background: linear-gradient(140deg, #ffffff 30%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow effect for active status dot */
+  .glow-green {
+    box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.5);
   }
 }
