@@ -3,13 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-  body {
-    background: #ffffff;
-    color: #111827;
-  }
+  html { scroll-behavior: smooth; }
+  body { background: #f4f5f7; color: #111827; }
 }
 
 @layer utilities {
@@ -24,5 +19,12 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
