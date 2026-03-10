@@ -39,7 +39,7 @@ function formatDate(ts: number): string {
 }
 
 function shortAddress(addr: string): string {
-  if (!addr) return '';
+  if (!addr || addr.length < 10) return addr || '';
   return addr.slice(0, 6) + '…' + addr.slice(-4);
 }
 
@@ -77,42 +77,34 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
   const snapshotLink = `https://snapshot.org/#/${spaceId}/proposal/${proposal.id}`;
 
   return (
-    <div
-      className="bg-white rounded-2xl overflow-hidden transition-all"
-      style={{
-        border: '1px solid #e2e8f0',
-        borderLeft: `4px solid ${isActive ? '#10b981' : '#cbd5e1'}`,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-      }}
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+      style={{ borderLeft: `3px solid ${isActive ? '#10b981' : '#e2e8f0'}` }}
     >
       <div className="p-5">
 
-        {/* Top row: status + date */}
+        {/* Status + date row */}
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            {/* Status badge */}
-            <span
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-              style={isActive
-                ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
-                : { background: '#f1f5f9', color: '#64748b' }}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${isActive ? 'animate-pulse' : ''}`}
-                style={{ background: isActive ? '#10b981' : '#94a3b8' }}
-              ></span>
-              {isActive ? 'ACTIVE' : proposal.state === 'pending' ? 'PENDING' : 'CLOSED'}
+            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
+              isActive
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : proposal.state === 'pending'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-gray-100 text-gray-500 border border-gray-200'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                isActive ? 'bg-emerald-500 animate-pulse' : proposal.state === 'pending' ? 'bg-amber-500' : 'bg-gray-400'
+              }`} />
+              {isActive ? 'Active' : proposal.state === 'pending' ? 'Pending' : 'Closed'}
             </span>
 
-            {/* Time left pill (active only) */}
             {isActive && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>
+              <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
                 ⏰ {timeLeft(proposal.end)}
               </span>
             )}
           </div>
-
-          <span className="text-xs" style={{ color: '#94a3b8' }}>
+          <span className="text-xs text-gray-400">
             {isActive ? `Ends ${formatDate(proposal.end)}` : formatDate(proposal.end)}
           </span>
         </div>
@@ -122,47 +114,40 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
 
         {/* Excerpt */}
         {proposal.body && (
-          <p className="text-sm mb-4 line-clamp-2 leading-relaxed" style={{ color: '#64748b' }}>
-            {proposal.body.replace(/#+\s/g, '').replace(/\*\*/g, '').replace(/\n/g, ' ').slice(0, 220)}…
+          <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed">
+            {proposal.body.replace(/#+\s/g, '').replace(/\*\*/g, '').replace(/\n/g, ' ').slice(0, 220)}
           </p>
         )}
 
-        {/* Vote breakdown */}
+        {/* Vote bars */}
         {proposal.scores_total > 0 && proposal.choices?.length > 0 && (
           <div className="mb-4">
-            {/* Meta */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: '#94a3b8' }}>
+              <span className="text-xs text-gray-400">
                 {(proposal.votes || 0).toLocaleString()} votes · {(proposal.scores_total || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} tokens
               </span>
             </div>
 
-            {/* Bar */}
-            <div className="flex gap-0.5 h-2 rounded-full overflow-hidden" style={{ background: '#f1f5f9' }}>
+            <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-gray-100">
               {proposal.choices.slice(0, 5).map((choice: string, i: number) => {
-                const score = proposal.scores?.[i] || 0;
-                const pct = (score / totalScore) * 100;
+                const pct = ((proposal.scores?.[i] || 0) / totalScore) * 100;
                 if (pct < 0.5) return null;
                 return (
-                  <div
-                    key={choice}
+                  <div key={choice} title={`${choice}: ${pct.toFixed(1)}%`}
                     style={{ width: `${pct}%`, background: CHOICE_COLORS[i % CHOICE_COLORS.length] }}
-                    title={`${choice}: ${pct.toFixed(1)}%`}
                     className="transition-all"
                   />
                 );
               })}
             </div>
 
-            {/* Choice legend */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
               {proposal.choices.slice(0, 4).map((choice: string, i: number) => {
-                const score = proposal.scores?.[i] || 0;
-                const pct = ((score / totalScore) * 100).toFixed(0);
+                const pct = ((proposal.scores?.[i] || 0) / totalScore * 100).toFixed(0);
                 return (
-                  <span key={choice} className="flex items-center gap-1 text-xs" style={{ color: '#64748b' }}>
-                    <span className="w-2 h-2 rounded-full inline-block" style={{ background: CHOICE_COLORS[i % CHOICE_COLORS.length] }}></span>
-                    {choice.slice(0, 14)}: <span className="font-semibold" style={{ color: CHOICE_COLORS[i % CHOICE_COLORS.length] }}>{pct}%</span>
+                  <span key={choice} className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <span className="w-2 h-2 rounded-full" style={{ background: CHOICE_COLORS[i % CHOICE_COLORS.length] }} />
+                    {choice.slice(0, 14)}: <span className="font-semibold text-gray-700">{pct}%</span>
                   </span>
                 );
               })}
@@ -170,18 +155,14 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
           </div>
         )}
 
-        {/* Action row */}
-        <div className="flex items-center gap-2 pt-3 border-t" style={{ borderColor: '#f1f5f9' }}>
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
           <button
             onClick={getSummary}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.15)' }}
+            className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
           >
             {loadingSummary ? (
-              <>
-                <span className="w-3 h-3 border border-t-transparent rounded-full animate-spin" style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }}></span>
-                Analyzing…
-              </>
+              <><span className="w-3 h-3 border border-indigo-500 border-t-transparent rounded-full animate-spin" /> Analyzing…</>
             ) : summary ? (
               expanded ? '▲ Hide Summary' : '▼ AI Summary'
             ) : (
@@ -193,32 +174,27 @@ export default function ProposalCard({ proposal, spaceId }: Props) {
             href={snapshotLink}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0' }}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors"
           >
-            View on Snapshot ↗
+            Snapshot ↗
           </a>
 
-          <span className="ml-auto text-xs font-mono" style={{ color: '#cbd5e1' }}>
-            {shortAddress(proposal.author)}
-          </span>
+          <span className="ml-auto text-xs font-mono text-gray-300">{shortAddress(proposal.author)}</span>
         </div>
       </div>
 
       {/* AI Summary panel */}
       {expanded && (
-        <div className="border-t px-5 py-4" style={{ background: 'rgba(99,102,241,0.04)', borderColor: 'rgba(99,102,241,0.12)' }}>
+        <div className="border-t border-indigo-50 bg-indigo-50/50 px-5 py-4">
           {loadingSummary ? (
-            <div className="flex items-center gap-3 text-sm" style={{ color: '#6366f1' }}>
-              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }}></div>
-              <span>Reading and analyzing proposal…</span>
+            <div className="flex items-center gap-3 text-sm text-indigo-600">
+              <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              Reading and analyzing proposal…
             </div>
           ) : summary ? (
             <div>
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6366f1' }}>✦ AI Summary</span>
-              </div>
-              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#374151' }}>{summary}</p>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2">✦ AI Summary</p>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{summary}</p>
             </div>
           ) : null}
         </div>

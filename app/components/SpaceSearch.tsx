@@ -28,7 +28,7 @@ export default function SpaceSearch({ onSelect }: Props) {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-lg">
       <div className="flex gap-2">
         <input
           type="text"
@@ -36,33 +36,19 @@ export default function SpaceSearch({ onSelect }: Props) {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && search()}
-          className="flex-1 px-4 py-3 text-sm rounded-xl focus:outline-none transition-all"
-          style={{
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            color: 'white',
-          }}
-          onFocus={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.11)';
-            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)';
-          }}
-          onBlur={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-          }}
+          className="flex-1 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 bg-white transition-all"
         />
         <button
           onClick={search}
           disabled={loading}
-          className="px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-          style={{ background: '#6366f1', boxShadow: '0 0 12px rgba(99,102,241,0.3)' }}
+          className="bg-gray-900 hover:bg-gray-700 text-white px-5 py-3 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? '…' : 'Search'}
         </button>
       </div>
 
       {searched && results.length > 0 && (
-        <div className="mt-2 rounded-xl overflow-hidden shadow-2xl text-left" style={{ background: '#151c2f', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden text-left">
           {results.slice(0, 6).map((space: any) => (
             <button
               key={space.id}
@@ -72,26 +58,21 @@ export default function SpaceSearch({ onSelect }: Props) {
                 setQuery('');
                 setSearched(false);
               }}
-              className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
             >
-              <div>
-                <div className="text-sm font-medium text-white">{space.name}</div>
-                <div className="text-xs font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{space.id}</div>
+              <div className="text-left">
+                <div className="text-sm font-medium text-gray-900">{space.name}</div>
+                <div className="text-xs font-mono text-gray-400">{space.id}</div>
               </div>
-              <div className="text-xs ml-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                {(space.followersCount || 0).toLocaleString()} members
-              </div>
+              <div className="text-xs text-gray-400">{(space.followersCount || 0).toLocaleString()} members</div>
             </button>
           ))}
         </div>
       )}
 
       {searched && !loading && results.length === 0 && (
-        <div className="mt-2 rounded-xl p-4 text-center text-sm" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
-          No DAO spaces found for &ldquo;{query}&rdquo;
+        <div className="mt-2 bg-white border border-gray-200 rounded-xl p-4 text-center text-sm text-gray-500">
+          No DAO found for &ldquo;{query}&rdquo;
         </div>
       )}
     </div>
